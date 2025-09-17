@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Vehicle Management System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            width: 240px;
+        }
+        
+        .main-content {
+            margin-left: 240px;
+            padding: 20px;
+        }
+        
+        .card-stats {
+            background: linear-gradient(87deg, #5e72e4 0, #825ee4 100%);
+            color: white;
+            border: none;
+        }
+        
+        .card-stats.success {
+            background: linear-gradient(87deg, #2dce89 0, #2dcecc 100%);
+        }
+        
+        .card-stats.warning {
+            background: linear-gradient(87deg, #fb6340 0, #fbb140 100%);
+        }
+        
+        .card-stats.info {
+            background: linear-gradient(87deg, #11cdef 0, #1171ef 100%);
+        }
+        
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+        
+        .recent-activity {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .activity-icon.booking {
+            background: rgba(45, 206, 137, 0.1);
+            color: #2dce89;
+        }
+        
+        .activity-icon.vehicle {
+            background: rgba(94, 114, 228, 0.1);
+            color: #5e72e4;
+        }
+        
+        .activity-icon.user {
+            background: rgba(251, 99, 64, 0.1);
+            color: #fb6340;
+        }
+        
+        @media (max-width: 767.98px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="/">
+            <i class="bi bi-car-front"></i> Vehicle Management
+        </a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="navbar-nav">
+            <div class="nav-item text-nowrap">
+                <span class="navbar-text px-3" sec:authentication="name">Welcome, User</span>
+                <a class="nav-link px-3" href="/logout">
+                    <i class="bi bi-box-arrow-right"></i> Sign out
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar Navigation -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/">
+                                <i class="bi bi-house-door"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/vehicles">
+                                <i class="bi bi-car-front"></i> Vehicles
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/bookings">
+                                <i class="bi bi-calendar-check"></i> My Bookings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/bookings/new">
+                                <i class="bi bi-plus-circle"></i> New Booking
+                            </a>
+                        </li>
+                        
+                        <!-- Admin Links -->
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN') or hasRole('FLEET_MANAGER')">
+                            <hr>
+                            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                                <span>Administration</span>
+                            </h6>
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN') or hasRole('FLEET_MANAGER')">
+                            <a class="nav-link" href="/admin/dashboard">
+                                <i class="bi bi-speedometer2"></i> Admin Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN') or hasRole('FLEET_MANAGER')">
+                            <a class="nav-link" href="/admin/bookings">
+                                <i class="bi bi-calendar3"></i> Manage Bookings
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                            <a class="nav-link" href="/admin/users">
+                                <i class="bi bi-people"></i> Manage Users
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN') or hasRole('FLEET_MANAGER')">
+                            <a class="nav-link" href="/admin/vehicles">
+                                <i class="bi bi-truck"></i> Manage Fleet
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a href="/bookings/new" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> New Booking
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card card-stats mb-4 mb-xl-0">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-white-50 mb-0">My Bookings</h5>
+                                        <span class="h2 font-weight-bold mb-0 text-white" th:text="${userBookingCount ?: 0}">0</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="stat-icon text-white">
+                                            <i class="bi bi-calendar-check"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card card-stats success mb-4 mb-xl-0">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-white-50 mb-0">Available Vehicles</h5>
+                                        <span class="h2 font-weight-bold mb-0 text-white" th:text="${availableVehicles ?: 0}">0</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="stat-icon text-white">
+                                            <i class="bi bi-car-front"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card card-stats warning mb-4 mb-xl-0">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-white-50 mb-0">Pending Approvals</h5>
+                                        <span class="h2 font-weight-bold mb-0 text-white" th:text="${pendingBookings ?: 0}">0</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="stat-icon text-white">
+                                            <i class="bi bi-clock"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card card-stats info mb-4 mb-xl-0">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <h5 class="card-title text-uppercase text-white-50 mb-0">Total Fleet</h5>
+                                        <span class="h2 font-weight-bold mb-0 text-white" th:text="${totalVehicles ?: 0}">0</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="stat-icon text-white">
+                                            <i class="bi bi-truck"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Row -->
+                <div class="row">
+                    <!-- Recent Bookings -->
+                    <div class="col-lg-8">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="bi bi-calendar-check"></i> Recent Bookings
+                                </h6>
+                                <a href="/bookings" class="btn btn-sm btn-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                <div th:if="${recentBookings != null and !recentBookings.empty}">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" width="100%" cellspacing="0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Vehicle</th>
+                                                    <th>Start Date</th>
+                                                    <th>End Date</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr th:each="booking : ${recentBookings}">
+                                                    <td>
+                                                        <strong th:text="${booking.vehicle.make + ' ' + booking.vehicle.model}">Toyota Camry</strong><br>
+                                                        <small class="text-muted" th:text="${booking.vehicle.licensePlate}">ABC-123</small>
+                                                    </td>
+                                                    <td th:text="${#temporals.format(booking.startDateTime, 'MMM dd, yyyy HH:mm')}">Dec 25, 2023 09:00</td>
+                                                    <td th:text="${#temporals.format(booking.endDateTime, 'MMM dd, yyyy HH:mm')}">Dec 25, 2023 17:00</td>
+                                                    <td>
+                                                        <span class="badge" 
+                                                              th:classappend="${booking.status == T(com.company.vehiclemanagement.model.BookingStatus).APPROVED ? 'bg-success' : 
+                                                                             booking.status == T(com.company.vehiclemanagement.model.BookingStatus).PENDING ? 'bg-warning' : 
+                                                                             booking.status == T(com.company.vehiclemanagement.model.BookingStatus).REJECTED ? 'bg-danger' : 'bg-secondary'}"
+                                                              th:text="${booking.status}">PENDING</span>
+                                                    </td>
+                                                    <td>
+                                                        <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-sm btn-outline-primary">View</a>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div th:if="${recentBookings == null or recentBookings.empty}" class="text-center py-4">
+                                    <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                                    <h5 class="text-muted mt-3">No Recent Bookings</h5>
+                                    <p class="text-muted">You haven't made any bookings yet.</p>
+                                    <a href="/bookings/new" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle"></i> Create Your First Booking
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions & Notifications -->
+                    <div class="col-lg-4">
+                        <!-- Quick Actions -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="bi bi-lightning"></i> Quick Actions
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <a href="/bookings/new" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle"></i> New Booking
+                                    </a>
+                                    <a href="/vehicles" class="btn btn-outline-primary">
+                                        <i class="bi bi-car-front"></i> Browse Vehicles
+                                    </a>
+                                    <a href="/bookings" class="btn btn-outline-secondary">
+                                        <i class="bi bi-calendar-check"></i> My Bookings
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vehicle Status -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="bi bi-car-front"></i> Fleet Status
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="p-3">
+                                            <div class="text-success h4" th:text="${availableVehicles ?: 0}">0</div>
+                                            <div class="text-muted small">Available</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-3">
+                                            <div class="text-warning h4" th:text="${(totalVehicles ?: 0) - (availableVehicles ?: 0)}">0</div>
+                                            <div class="text-muted small">In Use</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="progress mb-3" style="height: 10px;">
+                                    <div class="progress-bar bg-success" 
+                                         role="progressbar" 
+                                         th:style="'width: ' + ${totalVehicles > 0 ? (availableVehicles * 100 / totalVehicles) : 0} + '%'">
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center">
+                                    <small class="text-muted">
+                                        <span th:text="${availableVehicles ?: 0}">0</span> of 
+                                        <span th:text="${totalVehicles ?: 0}">0</span> vehicles available
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
