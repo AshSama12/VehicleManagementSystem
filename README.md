@@ -223,13 +223,6 @@ Run integration tests:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Support
 
-For support and questions:
-
-- Create an issue in the repository
-- Contact: your-email@company.com
-
----
 
 **Built with ❤️ using Spring Boot MVC**
